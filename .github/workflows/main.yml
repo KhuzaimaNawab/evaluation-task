@@ -1,39 +1,29 @@
-name: Flutter Build Windows
+name: "Build APK and IPA"
 on:
+  pull_request:
+    branches:
+      - main
   push:
-    branches: [main]
-
+    branches:
+      - main
 jobs:
   build:
     runs-on: windows-latest
     steps:
-      - name: Export Release Timestamp
-        run: echo "APP_VERSION=v$(date +'%d-%b-%Y-%H-%M-%S')" >> $GITHUB_ENV
-
-      - name: Checkout repository
-        uses: actions/checkout@v3
-
-      - name: Set up Java
-        uses: actions/setup-java@v2
+      - uses: actions/checkout@v3
+      - uses: actions/setup-java@v2
         with:
           java-version: '15'
           distribution: 'adopt'
-
-      - name: Set up Flutter
-        uses: subosito/flutter-action@v2
+      - uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.x'
           channel: 'stable'
-
-      - name: Install pub Dependencies
-        run: flutter pub get
-
-      - name: Build Release Windows App
-        run: flutter build windows
-
-      - name: Release Apps
+      - run: flutter pub get
+      - run: flutter build apk --debug --split-per-abi
+      - name: Push to Releases
         uses: ncipollo/release-action@v1
         with:
+          artifacts: "build/app/outputs/apk/debug/*"
           tag: ${{ env.APP_VERSION }}
           name: ${{ env.APP_VERSION }}
-          artifacts: build/windows/runner/Release/
