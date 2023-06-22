@@ -1,11 +1,11 @@
-name: Flutter Build Windows
+name: Flutter Build iOS and Android
 on:
   push:
     branches: [main]
 
 jobs:
   build:
-    runs-on: windows-latest
+    runs-on: macos-latest
     steps:
       - name: Export Release Timestamp
         run: echo "APP_VERSION=v$(date +'%d-%b-%Y-%H-%M-%S')" >> $GITHUB_ENV
@@ -28,12 +28,24 @@ jobs:
       - name: Install pub Dependencies
         run: flutter pub get
 
-      - name: Build Release Windows App
-        run: flutter build windows
+      - name: Build Release Android App
+        run: flutter build apk --debug --split-per-abi
+
+      - name: Build Release iOS App
+        run: |
+          flutter build ios --no-codesign
+          cd build/ios/iphoneos
+          mkdir Payload
+          cd Payload
+          ln -s ../Runner.app
+          cd ..
+          zip -r app.ipa Payload
 
       - name: Release Apps
         uses: ncipollo/release-action@v1
         with:
           tag: ${{ env.APP_VERSION }}
           name: ${{ env.APP_VERSION }}
-          artifacts: build/windows/runner/Release/
+          artifacts: |
+            build/app/outputs/apk/debug/*,
+            build/ios/iphoneos/app.ipa
